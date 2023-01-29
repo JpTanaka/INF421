@@ -4,7 +4,7 @@ class UnionFind:
         self.rank = [1 for i in range(n)]
         self.nElements = n
 
-    def findParent(self, v):
+    def find_parent(self, v):
         parent = self.parents[v]
         if v == parent:
             return v
@@ -12,7 +12,7 @@ class UnionFind:
         self.parents[v] = newParent
         return newParent
 
-    def unionVertices(self, v1, v2):
+    def union_vertices(self, v1, v2):
         parent1 = self.findParent(v1)
         parent2 = self.findParent(v2)
 
