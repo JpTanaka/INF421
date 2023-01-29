@@ -1,6 +1,13 @@
 from union_find import UnionFind
 from collections import deque
 
+
+def max_power2_jump(n, m):
+    power = 0
+    dist = max(n, m) - min(n, m)
+    while (2 ** power) <= dist:
+        power += 1
+    return power - 1
 class Graph:
     def __init__(self, n, m):
         # edges_general contains triplets edges_general = [(v_1, v_2, w), (v_2, v_3, w), ...]
@@ -44,7 +51,6 @@ class Graph:
         while count < self.n - 1:
             curr_edge = priority_queue[x]
             if self.mst_UF.find_parent(curr_edge[0]) != self.mst_UF.find_parent(curr_edge[1]):
-                # self.mst[curr_edge[0]].append((curr_edge[0], curr_edge[1], curr_edge[2]))
                 self.mst[curr_edge[0]][curr_edge[1]] = curr_edge[2]
                 self.mst[curr_edge[1]][curr_edge[0]] = curr_edge[2]
                 self.mst_UF.union_vertices(curr_edge[0], curr_edge[1])
@@ -104,5 +110,96 @@ class Graph:
                 curr_child_counter = next_child_counter
                 next_child_counter = 0
                 curr_level += 1
+
+
+    def get_ancestors(self):
+        dfs = []
+        dfs.append(1)
+        curr_parent = 1
+
+        seen = []
+        seen.append(1)
+
+        ancestor_vector = []
+
+        while dfs:
+            curr_parent = dfs.pop()
+
+            for child_node, weight in self.mst[curr_parent].items():
+                if child_node in seen:
+                    continue
+
+                ancestor_vector.append((curr_parent, weight))
+                self.ancestors_mp[child_node] = ancestor_vector
+
+                seen.append(child_node)
+                dfs.append(child_node)
+
+        log_2_n = max_power2_jump(self.n, 0)
+
+        new_ancestor = None
+
+        for j in range(1, log_2_n):
+            for v in range(2, self.n + 1):
+                if len(self.ancestors_mp[v]) < j-1:
+                    continue
+
+                ancestor, weight = self.ancestors_mp[v][j-1]
+
+                if ancestor == 1 or len(self.ancestors_mp[ancestor]) < j-1:
+                    continue
+
+                new_ancestor = (
+                    self.ancestors_mp[ancestor][j-1][0],
+                    max(weight, self.ancestors_mp[ancestor][j-1][1]),
+                )
+
+                self.ancestors_mp[v].append(new_ancestor)
+        
+
+    def get_same_level(self, u, v, weight):
+        depth_u = self.depth_mp[u]
+        depth_v = self.depth_mp[v]
+
+        if depth_u == depth_v:
+            return (u, weight)
+
+        jump = max_power2_jump(depth_u, depth_v)
+
+        weight = max(weight, self.ancestors_mp[u][jump].second)
+
+        return self.get_same_level(self.ancestors_mp[u][jump].first, v, weight)
+
+    def itineraries_v2(self, u, v):
+        depth_u = self.depth_mp[u]
+        depth_v = self.depth_mp[v]
+
+        if depth_v > depth_u:
+            u, v = v, u
+
+        max_weight = 0
+        same_level = self.get_same_level(u, v, max_weight)
+        u, max_weight = same_level
+
+        if u == v:
+            return max_weight
+
+        jump = -1
+
+        while True:
+            jump += 1
+
+            if (jump == 0 and self.ancestors_mp[u][0][0] == self.ancestors_mp[v][0][0]):
+                return max(max_weight, max(self.ancestors_mp[u][0][1], self.ancestors_mp[v][0][1]))
+
+            if (
+                self.ancestors_mp[u].size() < jump
+                or self.ancestors_mp[u][jump][0] == self.ancestors_mp[v][jump][0]
+            ):
+                max_weight = max(
+                    max_weight, max(self.ancestors_mp[u][jump-1][1], self.ancestors_mp[v][jump-1][1])
+                )
+                u, v = self.ancestors_mp[u][jump-1][0], self.ancestors_mp[v][jump-1][0]
+                jump = -1
 
     
