@@ -57,15 +57,15 @@ def time_v2():
 
 
 def time_v3():
-    for i in range(1):
+    for i in range(10):
         
-        test_0 = read_file(f"/home/nakatinha/repos/INF421/tests/tests/itineraries.0.in")
+        test_0 = read_file(f"/home/nakatinha/repos/INF421/tests/tests/itineraries.{i}.in")
         grafo = Graph(test_0[0], test_0[1])
         grafo.addEdges(test_0[2])
         t1 = time.perf_counter()
         answer = grafo.itineraries_v3(test_0[3])
         t2 = time.perf_counter()
-        print(i, t2-t1)
+        print(t2-t1)
 
 
 

@@ -15,6 +15,9 @@ class UnionFind:
     def set_parent(self, u, parent):
         self.parents[u] = parent
 
+    def get_parent(self, u):
+        return self.parents[u]
+
     def union_vertices(self, v1, v2):
         parent1 = self.find_parent(v1)
         parent2 = self.find_parent(v2)
@@ -29,6 +32,11 @@ class UnionFind:
             self.parents[parent2] = parent1
             self.rank[parent1] += 1
 
+    def find_root_no_compression(self, u):
+            parent = self.parents[u]
+            if u == parent: return u
+            else: return self.find_root_no_compression(parent); 
+        
     def find_root(self, v):
         parent = self.parents[v]
         if v == parent:

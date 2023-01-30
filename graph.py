@@ -25,11 +25,11 @@ class Graph:
         self.n = n
         self.m = m
         self.mst_UF = UnionFind(n)
-        # 
+        #
         self.color_set = UnionFind(n)
-        self.color_seen = []
-        self.cur_noise = []
-        self.queries_LCA = []
+        self.color_seen = [0 for _ in range(n + 1)]
+        self.cur_noise = [0 for _ in range(n+1)]
+        self.queries_LCA = [[] for _ in range(n+1)]
         self.hash_weight_mp = {}
 
     def countEdges(self):
@@ -50,6 +50,7 @@ class Graph:
 
     def printGraph(self):
         print(json.dumps(self.edges, indent=4))
+
     def printMST(self):
         print(json.dumps(self.mst, indent=4))
 
@@ -67,7 +68,9 @@ class Graph:
         x = 0
         while count < self.n - 1:
             curr_edge = priority_queue[x]
-            if self.mst_UF.find_parent(curr_edge[0] - 1) != self.mst_UF.find_parent(curr_edge[1] - 1):
+            if self.mst_UF.find_parent(curr_edge[0] - 1) != self.mst_UF.find_parent(
+                curr_edge[1] - 1
+            ):
                 self.mst[curr_edge[0]][curr_edge[1]] = curr_edge[2]
                 self.mst[curr_edge[1]][curr_edge[0]] = curr_edge[2]
                 self.mst_UF.union_vertices(curr_edge[0] - 1, curr_edge[1] - 1)
@@ -133,28 +136,28 @@ class Graph:
         seen = set()
         seen.add(1)
         ancestor_vector = []
-        count=0
+        count = 0
         while dfs:
             curr_parent = dfs.pop()
             for child_node, weight in self.mst[curr_parent].items():
                 if child_node in seen:
                     continue
-                
+
                 self.ancestors_mp[child_node] = [(curr_parent, weight)]
                 ancestor_vector.clear()
                 seen.add(child_node)
                 dfs.append(child_node)
-            count+=1
+            count += 1
         log_2_n = max_power2_jump(self.n, 0)
         self.ancestors_mp[1] = [(1, 0)]
 
         new_ancestor = None
         for j in range(1, log_2_n):
-            for v in range(1, self.n+1):
-                ancestor, weight = self.ancestors_mp[v][j-1]
+            for v in range(1, self.n + 1):
+                ancestor, weight = self.ancestors_mp[v][j - 1]
                 new_ancestor = (
-                    self.ancestors_mp[ancestor][j-1][0],
-                    max(weight, self.ancestors_mp[ancestor][j-1][1]),
+                    self.ancestors_mp[ancestor][j - 1][0],
+                    max(weight, self.ancestors_mp[ancestor][j - 1][1]),
                 )
 
                 self.ancestors_mp[v].append(new_ancestor)
@@ -187,7 +190,13 @@ class Graph:
         for i in queries:
             arr.append(self.itineraries_v2_query(i[0], i[1]))
         t5 = time.perf_counter()
-        return arr, {"time_mst": t2-t1, "time_ancestors": t3-t2, "time_depth_map": t4-t3, "time_queries": t5-t4, "n_queries": len(queries)}
+        return arr, {
+            "time_mst": t2 - t1,
+            "time_ancestors": t3 - t2,
+            "time_depth_map": t4 - t3,
+            "time_queries": t5 - t4,
+            "n_queries": len(queries),
+        }
 
     def itineraries_v2_query(self, u, v):
         depth_u = self.depth_mp[u]
@@ -221,48 +230,69 @@ class Graph:
                 max_weight = max(
                     max_weight,
                     max(
-                        self.ancestors_mp[u][jump-1][1],
-                        self.ancestors_mp[v][jump-1][1],
+                        self.ancestors_mp[u][jump - 1][1],
+                        self.ancestors_mp[v][jump - 1][1],
                     ),
                 )
                 u, v = (
-                    self.ancestors_mp[u][jump-1][0],
-                    self.ancestors_mp[v][jump-1][0],
+                    self.ancestors_mp[u][jump - 1][0],
+                    self.ancestors_mp[v][jump - 1][0],
                 )
                 jump = -1
 
-
     # o mesmo codigo do cara, mas o find vai storar no mapa o weight que teve do cara até o ancestor atual,
-    # quando a gente faz a union, a gente salva o current weight da subida, 
+    # quando a gente faz a union, a gente salva o current weight da subida,
     # 1 -> 2, 5, 6 com a resposta de 1 pra 2, 5, 6
 
     def tarjan_LCA(self, u, previous_parent, queries, output):
         for child, weight in self.mst[u].items():
-            if child==previous_parent: continue
+            if child == previous_parent:
+                continue
             self.tarjan_LCA(child, u, queries, output)
 
-            self.color_set.set_parent(child, u) 
+            self.color_set.set_parent(child-1, u-1)
             self.cur_noise[child] = weight
 
-        self.color_seen[u]=1
+        self.color_seen[u] = 1
 
         for query in queries[u]:
             [index, other_node] = query
+            # print(u, other_node, "u, other")
             if self.color_seen[other_node]:
                 self.update_weight_to_root(other_node)
-                self.queries_LCA[self.color_set.find_root(other_node)].append([index,other_node,u])
-            
-        for query in self.queries_LCA[u]:
+                self.queries_LCA[self.color_set.find_root(other_node-1)].append(
+                    [index, other_node, u]
+                )
+
+        # print(self.queries_LCA)
+        for query in self.queries_LCA[u-1]:
             output_integer, computed_node, to_compute_node = query
             self.update_weight_to_root(computed_node)
             self.update_weight_to_root(to_compute_node)
-            if computed_node== to_compute_node: output[output_integer] = 0
-            elif computed_node==u: output[output_integer]=self.cur_noise[to_compute_node]
-            elif to_compute_node==u: output[output_integer] = self.cur_noise[computed_node]
-            else: output[output_integer] = max(self.cur_noise[computed_node], self.cur_noise[to_compute_node])
+            # print(computed_node, to_compute_node, query)
+            if computed_node == to_compute_node:
+                output[output_integer] = 0
+            elif computed_node == u:
+                output[output_integer] = self.cur_noise[to_compute_node]
+            elif to_compute_node == u:
+                output[output_integer] = self.cur_noise[computed_node]
+            else:
+                output[output_integer] = max(self.cur_noise[computed_node], self.cur_noise[to_compute_node])
+
+            if computed_node == to_compute_node:
+                output[output_integer] = 0
+            elif computed_node == u:
+                output[output_integer] = self.cur_noise[to_compute_node]
+            elif to_compute_node == u:
+                output[output_integer] = self.cur_noise[computed_node]
+            else:
+                output[output_integer] = max(
+                    self.cur_noise[computed_node], self.cur_noise[to_compute_node]
+                )
+        # print(output)
 
     def get_queries_map(self, queries):
-        queries_map = [0]*self.n+1
+        queries_map = [[] for _ in range(self.n + 1)]
 
         for index, query in enumerate(queries):
             queries_map[query[0]].append([index, query[1]])
@@ -270,12 +300,12 @@ class Graph:
         return queries_map
 
     def update_weight_to_root(self, node):
-        ancestor = self.color_set.find_root(node)
+        ancestor = self.color_set.find_root_no_compression(node-1) +1
         next = node
         path = []
-        while next!=ancestor:
+        while next != ancestor:
             path.append(next)
-            next = self.color_set.get_parent(next)
+            next = self.color_set.get_parent(next-1) +1
 
         cur_node = None
         weight = 0
@@ -284,11 +314,20 @@ class Graph:
             cur_node = path.pop(0)
             weight = max(weight, self.cur_noise[cur_node])
             self.cur_noise[cur_node] = weight
-            self.color_set.set_parent(cur_node, ancestor)
+            self.color_set.set_parent(cur_node-1, ancestor-1)
 
     def itineraries_v3(self, queries):
-        output = [0]*len(queries)
+        t1 = time.perf_counter()
+        self.make_mst()
+        t2 = time.perf_counter()
+        self.get_ancestors()
+        t3 = time.perf_counter()
+        self.get_depth_map()
+        t4 = time.perf_counter()
+        output = [0] * len(queries)
+        output[0] = 1
         u = 1
         queries_mp = self.get_queries_map(queries)
-
-        self.tarjan_LCA(u, u, queries_mp, output)
+        arr = self.tarjan_LCA(u, u, queries_mp, output)
+        # print(arr)
+        return output
