@@ -1,6 +1,7 @@
 from union_find import UnionFind
 from collections import deque
 import json
+import time
 
 
 def max_power2_jump(n, m):
@@ -60,9 +61,7 @@ class Graph:
         x = 0
         while count < self.n - 1:
             curr_edge = priority_queue[x]
-            if self.mst_UF.find_parent(curr_edge[0] - 1) != self.mst_UF.find_parent(
-                curr_edge[1] - 1
-            ):
+            if self.mst_UF.find_parent(curr_edge[0] - 1) != self.mst_UF.find_parent(curr_edge[1] - 1):
                 self.mst[curr_edge[0]][curr_edge[1]] = curr_edge[2]
                 self.mst[curr_edge[1]][curr_edge[0]] = curr_edge[2]
                 self.mst_UF.union_vertices(curr_edge[0] - 1, curr_edge[1] - 1)
@@ -140,7 +139,6 @@ class Graph:
                 seen.add(child_node)
                 dfs.append(child_node)
             count+=1
-        print("asdf")
         log_2_n = max_power2_jump(self.n, 0)
         self.ancestors_mp[1] = [(1, 0)]
 
@@ -155,7 +153,6 @@ class Graph:
 
                 self.ancestors_mp[v].append(new_ancestor)
 
-
     def get_same_level(self, u, v, weight):
 
         depth_u = self.depth_mp[u]
@@ -167,12 +164,26 @@ class Graph:
             return (u, weight)
 
         jump = max_power2_jump(depth_u, depth_v)
-        print(depth_u, depth_v, u, v)
         weight = max(weight, self.ancestors_mp[u][jump][1])
 
         return self.get_same_level(self.ancestors_mp[u][jump][0], v, weight)
 
-    def itineraries_v2(self, u, v):
+    def itineraries_v2(self, queries):
+
+        t1 = time.perf_counter()
+        self.make_mst()
+        t2 = time.perf_counter()
+        self.get_ancestors()
+        t3 = time.perf_counter()
+        self.get_depth_map()
+        t4 = time.perf_counter()
+        arr = []
+        for i in queries:
+            arr.append(self.itineraries_v2_query(i[0], i[1]))
+        t5 = time.perf_counter()
+        return arr, {"time_mst": t2-t1, "time_ancestors": t3-t2, "time_depth_map": t4-t3, "time_queries": t5-t4, "n_queries": len(queries)}
+
+    def itineraries_v2_query(self, u, v):
         depth_u = self.depth_mp[u]
         depth_v = self.depth_mp[v]
 
@@ -213,3 +224,30 @@ class Graph:
                     self.ancestors_mp[v][jump-1][0],
                 )
                 jump = -1
+
+
+    # o mesmo codigo do cara, mas o find vai storar no mapa o weight que teve do cara até o ancestor atual,
+    # quando a gente faz a union, a gente salva o current weight da subida, 
+    # 1 -> 2, 5, 6 com a resposta de 1 pra 2, 5, 6
+
+    def tarjan_LCA(self, u, seen, queries, output, color_set):
+        for child, weight in self.mst[u].items():
+            self.tarjan_LCA(child, seen, queries, output, color_set)
+            color_set.union_vertices(u, child)
+            color_set.parents[color_set.find_parent(u)] = u
+
+        seen.add(u)
+        for i in range(len(queries)):
+            x, y = queries[i]
+            if u == x and y in seen:
+                output[i] = color_set.find_parent(y)
+
+            if u == y and x in seen:
+                output[i] = color_set.find_parent(x)
+
+    # def itineraries_v3(self, queries):
+    #     output = [0]*len(queries)
+    #     seen = set()
+    #     u = 1
+
+    #     self.tarjan_LCA(u, seen, queries, output, color_set)
