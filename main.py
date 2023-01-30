@@ -28,25 +28,9 @@ def time_v1():
         t2 = time.perf_counter()
         print(i, t2-t1)
 
-
-
-# def time_v2_adap():
-#     test_0 = read_file(f"/home/nakatinha/repos/INF421/tests/tests/itineraries.3.in")
-#     for i in [3**j for j in range(6, 12)]:
-#         grafo = Graph(test_0[0], test_0[1])
-#         grafo.addEdges(test_0[2])
-#         # t1 = time.perf_counter()
-#         answer, time = grafo.itineraries_v2(test_0[3][:i])
-#         # t2 = time.perf_counter()
-#         print(i, time)
-
-
-
 def time_v2():
-    for i in range(1):
-        
-        test_0 = read_file(f"/home/nakatinha/repos/INF421/tests/tests/itineraries.9.in")
-        print(test_0[4])
+    for i in range(10):   
+        test_0 = read_file(f"/home/nakatinha/repos/INF421/tests/tests/itineraries.{i}.in")
         grafo = Graph(test_0[0], test_0[1])
         grafo.addEdges(test_0[2])
         t1 = time.perf_counter()
@@ -58,26 +42,19 @@ def time_v2():
 
 def time_v3():
     for i in range(10):
-        
         test_0 = read_file(f"/home/nakatinha/repos/INF421/tests/tests/itineraries.{i}.in")
         grafo = Graph(test_0[0], test_0[1])
         grafo.addEdges(test_0[2])
+
         t1 = time.perf_counter()
-        answer = grafo.itineraries_v3(test_0[3])
+        grafo.itineraries_v3(test_0[3])
         t2 = time.perf_counter()
-        print(t2-t1)
+        print(i, t2-t1)
 
 
 
 if __name__=="__main__":
-    # test_0 = read_file("/home/nakatinha/repos/INF421/tests/tests/itineraries.1.in")
     # time_v1()
-    time_v3()
-    # grafo = Graph(test_0[0], test_0[1])
-    # grafo.addEdges(test_0[2])
-    # grafo.make_mst()
-    # grafo.get_depth_map()
-    # grafo.get_ancestors()
-    # grafo.printMST()
-    # print(grafo.itineraries_v2(test_0[3]))
+    time_v2()
+    # time_v3()
     

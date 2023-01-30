@@ -2,7 +2,7 @@ from union_find import UnionFind
 from collections import deque
 import json
 import time
-
+from typing import List
 
 def max_power2_jump(n, m):
     power = 0
@@ -25,7 +25,6 @@ class Graph:
         self.n = n
         self.m = m
         self.mst_UF = UnionFind(n)
-        #
         self.color_set = UnionFind(n)
         self.color_seen = [0 for _ in range(n + 1)]
         self.cur_noise = [0 for _ in range(n+1)]
@@ -163,7 +162,6 @@ class Graph:
                 self.ancestors_mp[v].append(new_ancestor)
 
     def get_same_level(self, u, v, weight):
-
         depth_u = self.depth_mp[u]
         depth_v = self.depth_mp[v]
 
@@ -178,7 +176,6 @@ class Graph:
         return self.get_same_level(self.ancestors_mp[u][jump][0], v, weight)
 
     def itineraries_v2(self, queries):
-
         t1 = time.perf_counter()
         self.make_mst()
         t2 = time.perf_counter()
@@ -240,10 +237,6 @@ class Graph:
                 )
                 jump = -1
 
-    # o mesmo codigo do cara, mas o find vai storar no mapa o weight que teve do cara até o ancestor atual,
-    # quando a gente faz a union, a gente salva o current weight da subida,
-    # 1 -> 2, 5, 6 com a resposta de 1 pra 2, 5, 6
-
     def tarjan_LCA(self, u, previous_parent, queries, output):
         for child, weight in self.mst[u].items():
             if child == previous_parent:
@@ -257,19 +250,15 @@ class Graph:
 
         for query in queries[u]:
             [index, other_node] = query
-            # print(u, other_node, "u, other")
             if self.color_seen[other_node]:
                 self.update_weight_to_root(other_node)
                 self.queries_LCA[self.color_set.find_root(other_node-1)].append(
                     [index, other_node, u]
                 )
-
-        # print(self.queries_LCA)
         for query in self.queries_LCA[u-1]:
             output_integer, computed_node, to_compute_node = query
             self.update_weight_to_root(computed_node)
             self.update_weight_to_root(to_compute_node)
-            # print(computed_node, to_compute_node, query)
             if computed_node == to_compute_node:
                 output[output_integer] = 0
             elif computed_node == u:
@@ -289,7 +278,6 @@ class Graph:
                 output[output_integer] = max(
                     self.cur_noise[computed_node], self.cur_noise[to_compute_node]
                 )
-        # print(output)
 
     def get_queries_map(self, queries):
         queries_map = [[] for _ in range(self.n + 1)]
@@ -316,18 +304,12 @@ class Graph:
             self.cur_noise[cur_node] = weight
             self.color_set.set_parent(cur_node-1, ancestor-1)
 
-    def itineraries_v3(self, queries):
-        t1 = time.perf_counter()
+    def itineraries_v3(self, queries: List[List[int]]) -> List[int]:
         self.make_mst()
-        t2 = time.perf_counter()
         self.get_ancestors()
-        t3 = time.perf_counter()
         self.get_depth_map()
-        t4 = time.perf_counter()
         output = [0] * len(queries)
-        output[0] = 1
         u = 1
         queries_mp = self.get_queries_map(queries)
-        arr = self.tarjan_LCA(u, u, queries_mp, output)
-        # print(arr)
+        self.tarjan_LCA(u, u, queries_mp, output)
         return output
