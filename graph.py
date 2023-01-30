@@ -25,6 +25,12 @@ class Graph:
         self.n = n
         self.m = m
         self.mst_UF = UnionFind(n)
+        # 
+        self.color_set = UnionFind(n)
+        self.color_seen = []
+        self.cur_noise = []
+        self.queries_LCA = []
+        self.hash_weight_mp = {}
 
     def countEdges(self):
         return len(self.edges_general)
@@ -230,24 +236,59 @@ class Graph:
     # quando a gente faz a union, a gente salva o current weight da subida, 
     # 1 -> 2, 5, 6 com a resposta de 1 pra 2, 5, 6
 
-    def tarjan_LCA(self, u, seen, queries, output, color_set):
+    def tarjan_LCA(self, u, previous_parent, queries, output):
         for child, weight in self.mst[u].items():
-            self.tarjan_LCA(child, seen, queries, output, color_set)
-            color_set.union_vertices(u, child)
-            color_set.parents[color_set.find_parent(u)] = u
+            if child==previous_parent: continue
+            self.tarjan_LCA(child, u, queries, output)
 
-        seen.add(u)
-        for i in range(len(queries)):
-            x, y = queries[i]
-            if u == x and y in seen:
-                output[i] = color_set.find_parent(y)
+            self.color_set.set_parent(child, u) 
+            self.cur_noise[child] = weight
 
-            if u == y and x in seen:
-                output[i] = color_set.find_parent(x)
+        self.color_seen[u]=1
 
-    # def itineraries_v3(self, queries):
-    #     output = [0]*len(queries)
-    #     seen = set()
-    #     u = 1
+        for query in queries[u]:
+            [index, other_node] = query
+            if self.color_seen[other_node]:
+                self.update_weight_to_root(other_node)
+                self.queries_LCA[self.color_set.find_root(other_node)].append([index,other_node,u])
+            
+        for query in self.queries_LCA[u]:
+            output_integer, computed_node, to_compute_node = query
+            self.update_weight_to_root(computed_node)
+            self.update_weight_to_root(to_compute_node)
+            if computed_node== to_compute_node: output[output_integer] = 0
+            elif computed_node==u: output[output_integer]=self.cur_noise[to_compute_node]
+            elif to_compute_node==u: output[output_integer] = self.cur_noise[computed_node]
+            else: output[output_integer] = max(self.cur_noise[computed_node], self.cur_noise[to_compute_node])
 
-    #     self.tarjan_LCA(u, seen, queries, output, color_set)
+    def get_queries_map(self, queries):
+        queries_map = [0]*self.n+1
+
+        for index, query in enumerate(queries):
+            queries_map[query[0]].append([index, query[1]])
+            queries_map[query[1]].append([index, query[0]])
+        return queries_map
+
+    def update_weight_to_root(self, node):
+        ancestor = self.color_set.find_root(node)
+        next = node
+        path = []
+        while next!=ancestor:
+            path.append(next)
+            next = self.color_set.get_parent(next)
+
+        cur_node = None
+        weight = 0
+
+        while len(path):
+            cur_node = path.pop(0)
+            weight = max(weight, self.cur_noise[cur_node])
+            self.cur_noise[cur_node] = weight
+            self.color_set.set_parent(cur_node, ancestor)
+
+    def itineraries_v3(self, queries):
+        output = [0]*len(queries)
+        u = 1
+        queries_mp = self.get_queries_map(queries)
+
+        self.tarjan_LCA(u, u, queries_mp, output)

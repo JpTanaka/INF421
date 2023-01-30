@@ -12,6 +12,9 @@ class UnionFind:
         self.parents[v] = newParent
         return newParent
 
+    def set_parent(self, u, parent):
+        self.parents[u] = parent
+
     def union_vertices(self, v1, v2):
         parent1 = self.find_parent(v1)
         parent2 = self.find_parent(v2)
@@ -25,3 +28,21 @@ class UnionFind:
         else:
             self.parents[parent2] = parent1
             self.rank[parent1] += 1
+
+    def find_root(self, v):
+        parent = self.parents[v]
+        if v == parent:
+            return v
+        new_parent = self.find_root(parent)
+        self.parents[v] = new_parent # path compression
+        return new_parent
+
+
+    def union_vertices_color_set(self,  v1, v2, depth_v1, depth_v2):
+            if (depth_v1 < depth_v2): 
+                self.parents[v2] = v1
+
+            else:
+                self.parents[v2] = v1
+        
+    
