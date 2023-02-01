@@ -33,7 +33,12 @@ def time_v2():
         grafo.addEdges(test_0[2])
         t1 = time.perf_counter()
         
-        answer, times = grafo.itineraries_v2(test_0[3])
+        answer, times = grafo.itineraries_v2(test_0[3])                                                                                                         
+        with open(f"/home/nakatinha/repos/INF421/outputs/itineraries.{i}.out", 'w') as fp:
+            for item in answer:
+                # write each item on a new line
+                fp.write(str(item)+'\n')
+
         t2 = time.perf_counter()
         print(i, {**times, "n":test_0[0], "m":test_0[1], "total_time": t2-t1})
 
