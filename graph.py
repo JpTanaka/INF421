@@ -4,7 +4,10 @@ import json
 import time
 from typing import List
 
-def max_power2_jump(n, m):
+def max_power2_jump(n:int , m:int) -> int:
+    """
+        returns the biggest i such that 2^i>=|n-m| 
+    """
     power = 0
     dist = max(n, m) - min(n, m)
     while (2**power) <= dist:
@@ -39,6 +42,10 @@ class Graph:
             self.addEdge(i[0], i[1], i[2])
 
     def addEdge(self, v1, v2, w):
+        """
+            Add edges in self.edges, if edge already in edges,
+            adds the edge with the smallest weight
+        """
         if v2 not in self.edges[v1].keys():
             self.edges[v2][v1] = w
             self.edges[v1][v2] = w
@@ -46,12 +53,6 @@ class Graph:
             self.edges[v2][v1] = min(w, self.edges[v2][v1])
             self.edges[v1][v2] = min(w, self.edges[v1][v2])
         self.edges_general.append((v1, v2, w))
-
-    def printGraph(self):
-        print(json.dumps(self.edges, indent=4))
-
-    def printMST(self):
-        print(json.dumps(self.mst, indent=4))
 
     def make_mst(self):
         """
@@ -131,7 +132,6 @@ class Graph:
         dfs = deque()
         dfs.appendleft(1)
         curr_parent = 1
-
         seen = set()
         seen.add(1)
         ancestor_vector = []
@@ -166,7 +166,7 @@ class Graph:
         depth_v = self.depth_mp[v]
 
         if depth_u < depth_v:
-            u, v = v, u
+            u, v = v, u #assures depth_u>=depth_v
         if depth_u == depth_v:
             return (u, weight)
 

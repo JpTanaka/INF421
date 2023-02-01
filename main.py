@@ -8,8 +8,6 @@ def read_file(file_name):
         edges = []
         for _ in range(m):
             edges.append([int(x) for x in file.readline().split()])
-
-
         queries = []
         n_queries = int(file.readline())
         for _ in range(n_queries):
